@@ -69,8 +69,17 @@ class MyForm(wx.Frame):
         return this_panel
 
     def onLoad(self, event):
-        # Todo: change this to an actual file selector
-        self.original_verbatims = pickle.load(open('verbatims.pkl', 'rb'))
+        with wx.FileDialog(self, "Open Data File", style=wx.FD_OPEN) as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return
+            pathname = fileDialog.GetPath()
+            try:
+                with open(pathname, 'r') as file:
+                    for line in file:
+                        self.original_verbatims.append(line)
+            except IOError:
+                wx.LogError("Cannot open file '%s'." % pathname)
+                print('what')
         text_box = self.panel_list[0].FindWindow(4)
         text_box.Clear()
         for v in self.original_verbatims:
