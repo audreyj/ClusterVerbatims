@@ -1,6 +1,6 @@
 import wx
 import wx.lib.scrolledpanel as scrolled
-import pickle
+import re
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.decomposition import NMF, LatentDirichletAllocation
 
@@ -39,9 +39,12 @@ class MyForm(wx.Frame):
         lda_button = wx.Button(button_panel, label="LDA!")
         lda_button.Bind(wx.EVT_BUTTON, self.lda)
         button_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        gina_button = wx.Button(button_panel, label="Gina!")
+        gina_button.Bind(wx.EVT_BUTTON, self.gina)
         button_sizer.Add(load_button)
         button_sizer.Add(add_button)
         button_sizer.Add(delete_button)
+        button_sizer.Add(gina_button)
         button_sizer.Add(lda_button)
         button_sizer.Add(go_button)
         button_panel.SetSizer(button_sizer)
@@ -69,12 +72,13 @@ class MyForm(wx.Frame):
         return this_panel
 
     def onLoad(self, event):
+        self.original_verbatims = []
         with wx.FileDialog(self, "Open Data File", style=wx.FD_OPEN) as fileDialog:
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 return
             pathname = fileDialog.GetPath()
             try:
-                with open(pathname, 'r') as file:
+                with open(pathname, 'r', encoding='utf-8') as file:
                     for line in file:
                         self.original_verbatims.append(line)
             except IOError:
@@ -112,16 +116,17 @@ class MyForm(wx.Frame):
                 original_list = self.original_verbatims[:]
                 continue
             keyword_box = p.FindWindow(2)
-            keyword_list = [f.lower().strip() for f in keyword_box.GetValue().split(',')]
+            keyword_list = [f.lower().strip() for f in keyword_box.GetValue().split(',') if f not in ['', ' ']]
+            keyword_long = [m for m in keyword_list if len(m) > 3]
+            keyword_short = [m for m in keyword_list if len(m) <= 3]
             text_box.Clear()
             transfer_list = []
-            for k in keyword_list:
-                if k in ['', ' ']:
-                    continue
-                if len(k) <= 3:
-                    k = ' ' + k + ' '
-                transfer_list.extend([t for t in original_list if k in t.lower()])
-            transfer_list = list(set(transfer_list))
+            for t in original_list:
+                if any(word in t.lower() for word in keyword_long):
+                    transfer_list.append(t)
+                elif any(re.search(r"\b%s\b" % word, t.lower()) for word in keyword_short):
+                    transfer_list.append(t)
+            # transfer_list = list(set(transfer_list))
             for verbatim in transfer_list:
                 original_list.remove(verbatim)
                 text_box.AppendText(verbatim)
@@ -154,6 +159,40 @@ class MyForm(wx.Frame):
             keyword_box.Clear()
             keyword_box.AppendText(message)
         self.recalculate(wx.EVT_BUTTON)
+
+    def gina(self, event):
+        keyword_dict = {'UI/UX': ['invite', 'download', 'update', 'netflix', 'media apps', 'ui', 'homepage',
+                                  'interface', 'layout', 'dashboard', 'home', 'snap'],
+                        'Accounts/Login': ['content restrict', 'login', 'security', 'sign', 'profile',
+                                           'password', 'personal', 'account'],
+                        'Compete': ['playstation', 'pcmr', 'ps better', 'console coming', 'pcmasterrace',
+                                    'ps4', 'desktop', 'scorpio', 'sony', 'steam', 'xbox360', '360', 'pc', 'ps 4'],
+                        'Cost/Value': ['discount', 'price', 'pays', 'monthly', 'payin', 'overprice', 'buy',
+                                       'store', 'cheap', 'gold', 'expens'],
+                        'Enforcement': ['bannd', 'suspend', 'enforc', 'cheat', 'report', 'unban', 'ban',
+                                        'suspend', 'banning', 'banned', 'bans', 'moderator'],
+                        'Games/Backwards Compatibility': ['backward', 'game', 'compat', 'jrpgs', 'exclus'],
+                        'Hardware': ['hardware', 'read', 'controller', 'sound', 'battery', 'batteries',
+                                     'drive', 'mic', 'bluetooth', 'kinect', 'headset'],
+                        'Social/Mixer': ['cheating', 'send', 'clip', 'talk', 'people', 'mixer', 'upload',
+                                         'bitstream', 'studio', 'parties', 'party', 'chat', 'beam', 'record'],
+                        'Network/Connection': ['connect', 'offline', 'wifi', 'network', 'conectd', 'online',
+                                               'internet'],
+                        'Performance/Reliability': ['open', 'reliab', 'glitch', 'crash', 'lag', 'freez',
+                                                    'performance', 'slow', 'load', 'lagg', 'bugs'],
+                        'Support': ['support', 'costumer', 'service', 'customer', 'language', 'country',
+                                    'troubleshoot']}
+        for title, k_list in keyword_dict.items():
+            new_panel = self.add_panel(self.scrolled_panel, "Category %d" % len(self.panel_list))
+            title_text = new_panel.FindWindow(1)
+            title_text.SetLabel(title)
+            keyword_box = new_panel.FindWindow(2)
+            keyword_box.Clear()
+            for k in k_list:
+                keyword_box.AppendText(k + ', ')
+            self.spSizer.Add(new_panel)
+            self.scrolled_panel.Layout()
+            self.scrolled_panel.SetupScrolling()
 
 
 # Run the program
