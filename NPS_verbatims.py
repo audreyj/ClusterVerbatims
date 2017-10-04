@@ -14,7 +14,7 @@ from sklearn.linear_model import PassiveAggressiveClassifier
 from sklearn.naive_bayes import BernoulliNB, MultinomialNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neighbors import NearestCentroid
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.utils.extmath import density
 from sklearn import metrics
 import os
@@ -27,22 +27,22 @@ import matplotlib.pyplot as plt
 
 
 psuedo_categories = {'null response': ['no primary category', 'no feedback', 'neutral', 'non-english', 'nps prompt',
-                                       '"no" recommendation'],
-                     'positive': ['positive', 'positivie', '"yes" recommendation'],
-                     'compete': ['pc compete', 'ps4', 'xbox 360', 'compete', 'scorpio', '360', '4k'],
+                                       '"no" recommendation', 'general displeasure'],
+                     'pc compete': ['pc compete'],
+                     'ps4': ['ps4'],
+                     'xbox 360': ['xbox 360', '360'],
                      'enforcement': ['enforcement', 'cheat'],
                      'support': ['support'],
                      'cost/value': ['cost/gold value', 'cost', 'gold', 'purchase', 'store', 'retail'],
-                     'reliability/performance': ['reliability', 'service reliability', 'performance'],
+                     'reliability': ['reliability', 'service reliability'],
+                     'performance': ['performance'],
                      'network/connection': ['connection', 'network', 'offline'],
-                     'hardware': ['hardware', 'controller', ' controller', 'mic', 'keyboard', 'storage',
-                                  'headset', 'sound quality', 'vr', 'kinect'],
-                     'UI/UX': ['ui/ux', 'snap', 'installation/download', 'delete', 'download/installation',
-                               'settings', 'home', 'apps', 'updates', 'update', 'notification',
-                               'ads', 'advertisements'],
-                     'mixer/social': ['mixer', 'beam', 'streaming', 'bitstream', 'broadcast', 'twitch',
-                                      'gamedvr', 'social experience', 'party', 'messaging', 'friends',
-                                      'activity feed'],
+                     'hardware': ['hardware', 'mic', 'keyboard', 'storage', 'headset', 'sound quality', 'vr', 'kinect'],
+                     'controller': ['controller', ' controller'],
+                     'UI/UX': ['ui/ux', 'snap', 'installation/download', 'delete', 'download/installation', 'ads',
+                               'settings', 'home', 'apps', 'updates', 'update', 'notification', 'advertisements'],
+                     'mixer/social': ['mixer', 'beam', 'streaming', 'bitstream', 'broadcast', 'twitch', 'friends',
+                                      'gamedvr', 'social experience', 'party', 'messaging', 'activity feed'],
                      'games': ['games', 'game catalog', 'backwards compatibility', 'fps', 'preview'],
                      'account/profile': ['accounts', 'profile', 'privacy', 'security', 'safety', 'sign-in']}
 
@@ -166,18 +166,15 @@ for penalty in ["l2", "l1"]:
     print('=' * 80)
     print("%s penalty" % penalty.upper())
     # Train Liblinear model
-    results.append(benchmark(LinearSVC(penalty=penalty, dual=False,
-                                       tol=1e-3)))
+    results.append(benchmark(LinearSVC(penalty=penalty, dual=False, tol=1e-3)))
 
     # Train SGD model
-    results.append(benchmark(SGDClassifier(alpha=.0001, n_iter=50,
-                                           penalty=penalty)))
+    results.append(benchmark(LogisticRegression(penalty=penalty)))
 
 # Train SGD with Elastic Net penalty
 print('=' * 80)
 print("Elastic-Net penalty")
-results.append(benchmark(SGDClassifier(alpha=.0001, n_iter=50,
-                                       penalty="elasticnet")))
+results.append(benchmark(SGDClassifier(alpha=.0001, n_iter=50, penalty="elasticnet")))
 
 # Train NearestCentroid without threshold
 print('=' * 80)
@@ -195,8 +192,7 @@ print("LinearSVC with L1-based feature selection")
 # The smaller C, the stronger the regularization.
 # The more regularization, the more sparsity.
 results.append(benchmark(Pipeline([
-  ('feature_selection', SelectFromModel(LinearSVC(penalty="l1", dual=False,
-                                                  tol=1e-3))),
+  ('feature_selection', SelectFromModel(LinearSVC(penalty="l1", dual=False, tol=1e-3))),
   ('classification', LinearSVC(penalty="l2"))])))
 
 # make some plots
@@ -212,8 +208,7 @@ test_time = np.array(test_time) / np.max(test_time)
 plt.figure(figsize=(12, 8))
 plt.title("Score")
 plt.barh(indices, score, .2, label="score", color='navy')
-plt.barh(indices + .3, training_time, .2, label="training time",
-         color='c')
+plt.barh(indices + .3, training_time, .2, label="training time", color='c')
 plt.barh(indices + .6, test_time, .2, label="test time", color='darkorange')
 plt.yticks(())
 plt.legend(loc='best')

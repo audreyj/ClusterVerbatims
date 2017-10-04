@@ -161,27 +161,32 @@ class MyForm(wx.Frame):
         self.recalculate(wx.EVT_BUTTON)
 
     def gina(self, event):
-        keyword_dict = {'UI/UX': ['invite', 'download', 'update', 'netflix', 'media apps', 'ui', 'homepage',
-                                  'interface', 'layout', 'dashboard', 'home', 'snap'],
-                        'Accounts/Login': ['content restrict', 'login', 'security', 'sign', 'profile',
-                                           'password', 'personal', 'account'],
-                        'Compete': ['playstation', 'pcmr', 'ps better', 'console coming', 'pcmasterrace',
-                                    'ps4', 'desktop', 'scorpio', 'sony', 'steam', 'xbox360', '360', 'pc', 'ps 4'],
-                        'Cost/Value': ['discount', 'price', 'pays', 'monthly', 'payin', 'overprice', 'buy',
-                                       'store', 'cheap', 'gold', 'expens'],
+        keyword_dict = {'Games/Backwards Compatibility': ['backward', 'compat', 'jrpgs', 'exclus', 'exculsive'],
                         'Enforcement': ['bannd', 'suspend', 'enforc', 'cheat', 'report', 'unban', 'ban',
-                                        'suspend', 'banning', 'banned', 'bans', 'moderator'],
-                        'Games/Backwards Compatibility': ['backward', 'game', 'compat', 'jrpgs', 'exclus'],
-                        'Hardware': ['hardware', 'read', 'controller', 'sound', 'battery', 'batteries',
+                                        'suspend', 'banning', 'banned', 'bans', 'moderator', 'appeal', 'band'],
+                        'Cost/Value': ['discount', 'price', 'pays', 'monthly', 'payin', 'buy', 'free', 'fees',
+                                       'store', 'gold', 'expens', 'pay to play'],
+                        'Xbox 360': ['xbox 360', '360', 'xb360', 'xbox360'],
+                        'PC Compete': ['pcmr', 'pcmasterrace', 'pc'],
+                        'PS4': ['ps4', 'ps 4', 'playstation', 'ps', 'ps4s', 'sony'],
+                        'Reliability': ['fix', 'stable', 'glitch', 'servers', 'crash', 'hang', 'bugs', 'bug',
+                                        'crash', 'unreliab', 'restart'],
+                        'Performance': ['freez', 'lagg', 'responsiv', 'lags', 'slow', 'memory', 'lag',
+                                        'perform', 'loads', 'loading'],
+                        'UI/UX': ['invite', 'download', 'update', 'netflix', 'media apps', 'ui', 'homepage',
+                                  'interface', 'layout', 'dashboard', 'home', 'snap', 'user', 'youtube', 'menu'],
+                        'Accounts/Login': ['content restrict', 'login', 'security', 'sign', 'profile',
+                                           'password', 'personal', 'account', 'log'],
+                        'Controller': ['control', 'elite', 'batter', 'durab'],
+                        'Hardware': ['hardware', 'read', 'sound', 'drive', 'tray', 'process', 'space',
                                      'drive', 'mic', 'bluetooth', 'kinect', 'headset'],
-                        'Social/Mixer': ['cheating', 'send', 'clip', 'talk', 'people', 'mixer', 'upload',
+                        'Support': ['support', 'costumer', 'service', 'customer', 'language', 'country',
+                                    'troubleshoot'],
+                        'Social/Mixer': ['clip', 'people', 'mixer', 'upload',
                                          'bitstream', 'studio', 'parties', 'party', 'chat', 'beam', 'record'],
                         'Network/Connection': ['connect', 'offline', 'wifi', 'network', 'conectd', 'online',
-                                               'internet'],
-                        'Performance/Reliability': ['open', 'reliab', 'glitch', 'crash', 'lag', 'freez',
-                                                    'performance', 'slow', 'load', 'lagg', 'bugs'],
-                        'Support': ['support', 'costumer', 'service', 'customer', 'language', 'country',
-                                    'troubleshoot']}
+                                               'internet']
+                        }
         for title, k_list in keyword_dict.items():
             new_panel = self.add_panel(self.scrolled_panel, "Category %d" % len(self.panel_list))
             title_text = new_panel.FindWindow(1)
