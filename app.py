@@ -1,8 +1,8 @@
 import wx
 import wx.lib.scrolledpanel as scrolled
 import re
-from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
-from sklearn.decomposition import NMF, LatentDirichletAllocation
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.decomposition import LatentDirichletAllocation
 
 
 ########################################################################
@@ -81,9 +81,12 @@ class MyForm(wx.Frame):
                 with open(pathname, 'r', encoding='utf-8') as file:
                     for line in file:
                         self.original_verbatims.append(line)
-            except IOError:
-                wx.LogError("Cannot open file '%s'." % pathname)
-                print('what')
+                    print('utf-8')
+            except:
+                with open(pathname, 'r', encoding='ANSI') as file:
+                    for line in file:
+                        self.original_verbatims.append(line)
+                    print('ansi')
         text_box = self.panel_list[0].FindWindow(4)
         text_box.Clear()
         for v in self.original_verbatims:

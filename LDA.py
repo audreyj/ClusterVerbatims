@@ -23,7 +23,7 @@ data_samples_positive = []
 data_samples_neutral = []
 data_samples_negative = []
 sid = SentimentIntensityAnalyzer()
-with open('siuf_list.txt', encoding='utf-8') as f:
+with open('SeptVerbatimTest.txt', encoding='utf-8') as f:
     for line in f:
         ss = sid.polarity_scores(line)
         if ss['compound'] > 0.3:
