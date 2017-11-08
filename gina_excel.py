@@ -1,13 +1,18 @@
 import wx
 import wx.lib.scrolledpanel as scrolled
 import xlsxwriter
-
+from sklearn.externals import joblib
+from sklearn.neighbors import typedefs
+from sklearn import svm
+from sklearn import feature_extraction
+import string
+from collections import Counter
 
 ########################################################################
 class MyForm(wx.Frame):
     # ----------------------------------------------------------------------
     def __init__(self):
-        wx.Frame.__init__(self, None, wx.ID_ANY, "Category-Maker", size=(1500, 800))
+        wx.Frame.__init__(self, None, wx.ID_ANY, "Category-Maker", size=(400, 400))
         self.panel_list = []
         self.original_verbatims = []
 
@@ -53,13 +58,44 @@ class MyForm(wx.Frame):
                     for line in file:
                         self.original_verbatims.append(line)
                     print('ansi')
-        text_box = self.panel_list[0].FindWindow(4)
-        text_box.Clear()
-        for v in self.original_verbatims:
-            text_box.AppendText(v)
-        lines_text = self.panel_list[0].FindWindow(3)
-        lines_text.SetLabel("Lines = %d" % text_box.GetNumberOfLines())
-        self.panel_list[0].Layout()
+            clf = joblib.load('data/nps_model_file.pkl')
+            vectorizer = joblib.load('data/nps_vectorizer.pkl')
+
+            total_verbatim_count = 0
+            output_predictions = []
+            prediction_counter = Counter()
+            for v in self.original_verbatims:
+                total_verbatim_count += 1
+                verbatim_one = v.split('\n')[0]
+                verbatim_two = verbatim_one.lower()
+                verbatim = ''.join([l for l in verbatim_two if l not in string.punctuation])
+                x_test = vectorizer.transform([verbatim])
+                prediction = clf.predict(x_test)[0]
+                # print(verbatim, prediction)
+                output_predictions.append(prediction)
+                prediction_counter[prediction] += 1
+
+        with wx.FileDialog(self, "Save Excel File", wildcard="xlsx files (*.xlsx)|*.xlsx",
+                           style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as fileDialog:
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                return
+            out_pathname = fileDialog.GetPath()
+            workbook = xlsxwriter.Workbook(out_pathname)
+            worksheet = workbook.add_worksheet()
+            row = 0
+            col = 0
+            for e, s in enumerate(self.original_verbatims):
+                worksheet.write(row, col, output_predictions[e])
+                worksheet.write(row, col+1, s)
+                row += 1
+
+            worksheet2 = workbook.add_worksheet()
+            row = 0
+            col = 0
+            for m in prediction_counter.most_common():
+                worksheet2.write(row, col, m[0])
+                worksheet2.write(row, col+1, m[1])
+                row += 1
 
 
 # Run the program

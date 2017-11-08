@@ -11,6 +11,7 @@ import pickle
 from collections import Counter
 import numpy as np
 from time import time
+import string
 from sklearn.externals import joblib
 
 
@@ -34,8 +35,8 @@ psuedo_categories = {'null response': ['no primary category', 'no feedback', 'ne
                      'games': ['games', 'game catalog', 'backwards compatibility', 'fps', 'preview'],
                      'account/profile': ['accounts', 'profile', 'privacy', 'security', 'safety', 'sign-in']}
 
-file_loc = 'Compiled Verbatims.csv'
-file_out = 'ginas_verbatims_dict.pkl'
+file_loc = 'data/Compiled Verbatims.csv'
+file_out = 'data/ginas_verbatims_dict.pkl'
 if not os.path.exists(file_out):
     file_count = 0
     verbatim_list = []
@@ -66,8 +67,11 @@ if not os.path.exists(file_out):
             month_counter[p[0]] += 1
             category_counter[mapped_cat] += 1
             category_list.append(mapped_cat)
+            clean_one = p[3].lower()
+            clean_two = ''.join([l for l in clean_one if l not in string.punctuation])
             verbatim_list.append({'month': p[0], 'rating': p[1], 'category': p[2],
-                                  'verbatim': p[3], 'pcat': mapped_cat})
+                                  'raw verbatim': p[3], 'pcat': mapped_cat, 'verbatim': clean_two})
+
             outfile.write(p[3] + '\n')
     print('file length: ', file_count)
     print('number of articles: ', len(verbatim_list))
@@ -91,6 +95,7 @@ X_train, X_test, y_train, y_test = train_test_split(x_list, y_list, test_size=0.
 vectorizer = TfidfVectorizer(ngram_range=(1, 4), stop_words='english')
 X_train = vectorizer.fit_transform(X_train)
 X_test = vectorizer.transform(X_test)
+joblib.dump(vectorizer, 'data/nps_vectorizer.pkl')
 print("train samples: %d, train features: %d" % X_train.shape)
 feature_names = vectorizer.get_feature_names()
 feature_names = np.asarray(feature_names)
@@ -104,7 +109,7 @@ def benchmark(clf):
     clf.fit(X_train, y_train)
     train_time = time() - t0
     print("train time: %0.3fs" % train_time)
-    joblib.dump(clf, 'nps_model_file.pkl')
+    joblib.dump(clf, 'data/nps_model_file.pkl')
 
     t0 = time()
     pred = clf.predict(X_test)

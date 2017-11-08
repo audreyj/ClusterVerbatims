@@ -104,32 +104,26 @@ sample_range = int(len(data_samples) * 0.9)
 word2vec_model = gensim.models.KeyedVectors.load_word2vec_format('data/GoogleNews-vectors-negative300.bin.gz', binary=True)
 word2vec_model.init_sims(replace=True)  # normalizes vectors
 
-distance_factor = 0.9
+distance_factor = 1.0
 copy_list = data_samples[:]
-saved_out = [{'distance metric': 0, 'test string': []} for x in range(10)]
 
-# test_against_list = get_list(copy_list)
-test_against_list = copy_list
-for e, a in enumerate(test_against_list):
-    output_d = random_test(copy_list, a, distance_factor)
-    for ind, s in enumerate(saved_out):
-        if output_d['distance metric'] > s['distance metric'] \
-                and not any(g in s['test string'] for g in output_d['test string']):
-            saved_out.insert(ind, output_d)
-            del saved_out[-1]
-            break
+for i in range(20):
+    # test_against_list = get_list(copy_list)
+    # test_against_list = random.sample(copy_list, sample_range)
+    test_against_list = copy_list
+    test_len = 0
+    for e, a in enumerate(test_against_list):
+        output_d = random_test(copy_list, a, distance_factor)
+        if output_d['distance metric'] > test_len:
+            test_len = output_d['distance metric']
+            saved_out = output_d
+    print("#%d: (%d, %f) %s" % (i, saved_out['match count'], saved_out['distance metric'], saved_out['test string']))
+    for e, t in enumerate(saved_out['match list']):
+        print('   - ', e, data_samples_dicts[data_samples.index(t[0])]['raw'], t[1])
+        copy_list.remove(t[0])
 
-total_matched_verbatims = []
-for e, t in enumerate(saved_out):
-    print("#%d: (%d, %f) %s" % (e, t['match count'], t['distance metric'], t['test string']))
-    for i, v in enumerate(t['match list']):
-        raw_words = data_samples_dicts[data_samples.index(v[0])]['raw']
-        print('   - ', i, raw_words, v[1])
-        total_matched_verbatims.append(raw_words)
-
-total_matched_verbatims = set(total_matched_verbatims)
 end = time.time()
 print('TIME: ', end-start)
-for ind, v in enumerate([x['raw'] for x in data_samples_dicts if x['raw'] not in total_matched_verbatims]):
-    print("#%d: %s" % (ind, v))
+for ind, v in enumerate(copy_list):
+    print("#%d: %s" % (ind, data_samples_dicts[data_samples.index(v)]['raw']))
 
