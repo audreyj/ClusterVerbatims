@@ -39,12 +39,9 @@ class MyForm(wx.Frame):
         lda_button = wx.Button(button_panel, label="LDA!")
         lda_button.Bind(wx.EVT_BUTTON, self.lda)
         button_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        gina_button = wx.Button(button_panel, label="Gina!")
-        gina_button.Bind(wx.EVT_BUTTON, self.gina)
         button_sizer.Add(load_button)
         button_sizer.Add(add_button)
         button_sizer.Add(delete_button)
-        button_sizer.Add(gina_button)
         button_sizer.Add(lda_button)
         button_sizer.Add(go_button)
         button_panel.SetSizer(button_sizer)
@@ -81,12 +78,12 @@ class MyForm(wx.Frame):
                 with open(pathname, 'r', encoding='utf-8') as file:
                     for line in file:
                         self.original_verbatims.append(line)
-                    print('utf-8')
+                    # print('utf-8')
             except:
                 with open(pathname, 'r', encoding='ANSI') as file:
                     for line in file:
                         self.original_verbatims.append(line)
-                    print('ansi')
+                    # print('ansi')
         text_box = self.panel_list[0].FindWindow(4)
         text_box.Clear()
         for v in self.original_verbatims:
@@ -102,7 +99,7 @@ class MyForm(wx.Frame):
         self.scrolled_panel.SetupScrolling()
 
     def onDelete(self, event):
-        print("in onDelete")
+        # print("in onDelete")
         if len(self.panel_list) == 1:
             return 'nope'
         for p in self.panel_list[-1].GetChildren():
@@ -120,6 +117,7 @@ class MyForm(wx.Frame):
                 continue
             keyword_box = p.FindWindow(2)
             keyword_list = [f.lower().strip() for f in keyword_box.GetValue().split(',') if f not in ['', ' ']]
+            # print(keyword_list)
             keyword_long = [m for m in keyword_list if len(m) > 3]
             keyword_short = [m for m in keyword_list if len(m) <= 3]
             text_box.Clear()
@@ -153,7 +151,7 @@ class MyForm(wx.Frame):
         tf = tf_vectorizer.fit_transform(self.original_verbatims)
         lda = LatentDirichletAllocation(max_iter=150, learning_method='online', learning_offset=50., random_state=0,
                                         n_topics=len(self.panel_list)-1)
-        print(len(self.panel_list))
+        # print(len(self.panel_list))
         lda.fit(tf)
         tf_feature_names = tf_vectorizer.get_feature_names()
         for topic_idx, topic in enumerate(lda.components_):
@@ -162,45 +160,6 @@ class MyForm(wx.Frame):
             keyword_box.Clear()
             keyword_box.AppendText(message)
         self.recalculate(wx.EVT_BUTTON)
-
-    def gina(self, event):
-        keyword_dict = {'Games/Backwards Compatibility': ['backward', 'compat', 'jrpgs', 'exclus', 'exculsive'],
-                        'Enforcement': ['bannd', 'suspend', 'enforc', 'cheat', 'report', 'unban', 'ban',
-                                        'suspend', 'banning', 'banned', 'bans', 'moderator', 'appeal', 'band'],
-                        'Cost/Value': ['discount', 'price', 'pays', 'monthly', 'payin', 'buy', 'free', 'fees',
-                                       'store', 'gold', 'expens', 'pay to play'],
-                        'Xbox 360': ['xbox 360', '360', 'xb360', 'xbox360'],
-                        'PC Compete': ['pcmr', 'pcmasterrace', 'pc'],
-                        'PS4': ['ps4', 'ps 4', 'playstation', 'ps', 'ps4s', 'sony'],
-                        'Reliability': ['fix', 'stable', 'glitch', 'servers', 'crash', 'hang', 'bugs', 'bug',
-                                        'crash', 'unreliab', 'restart'],
-                        'Performance': ['freez', 'lagg', 'responsiv', 'lags', 'slow', 'memory', 'lag',
-                                        'perform', 'loads', 'loading'],
-                        'UI/UX': ['invite', 'download', 'update', 'netflix', 'media apps', 'ui', 'homepage',
-                                  'interface', 'layout', 'dashboard', 'home', 'snap', 'user', 'youtube', 'menu'],
-                        'Accounts/Login': ['content restrict', 'login', 'security', 'sign', 'profile',
-                                           'password', 'personal', 'account', 'log'],
-                        'Controller': ['control', 'elite', 'batter', 'durab'],
-                        'Hardware': ['hardware', 'read', 'sound', 'drive', 'tray', 'process', 'space',
-                                     'drive', 'mic', 'bluetooth', 'kinect', 'headset'],
-                        'Support': ['support', 'costumer', 'service', 'customer', 'language', 'country',
-                                    'troubleshoot'],
-                        'Social/Mixer': ['clip', 'people', 'mixer', 'upload',
-                                         'bitstream', 'studio', 'parties', 'party', 'chat', 'beam', 'record'],
-                        'Network/Connection': ['connect', 'offline', 'wifi', 'network', 'conectd', 'online',
-                                               'internet']
-                        }
-        for title, k_list in keyword_dict.items():
-            new_panel = self.add_panel(self.scrolled_panel, "Category %d" % len(self.panel_list))
-            title_text = new_panel.FindWindow(1)
-            title_text.SetLabel(title)
-            keyword_box = new_panel.FindWindow(2)
-            keyword_box.Clear()
-            for k in k_list:
-                keyword_box.AppendText(k + ', ')
-            self.spSizer.Add(new_panel)
-            self.scrolled_panel.Layout()
-            self.scrolled_panel.SetupScrolling()
 
 
 # Run the program

@@ -1,7 +1,6 @@
 import wx
 import wx.lib.scrolledpanel as scrolled
-import re
-from sklearn.externals import joblib
+import xlsxwriter
 
 
 ########################################################################

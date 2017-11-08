@@ -23,7 +23,7 @@ import py2exe
 import sys
 # important >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 # enter the filename of your wxPython code file to compile
-filename = "app.py"
+filename = "VerbatimSorter.py"
 # this creates the filename of your .exe file in the dist folder
 if filename.endswith(".py"):
     distribution = filename[:-3]
