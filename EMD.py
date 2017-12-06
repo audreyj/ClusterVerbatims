@@ -3,7 +3,6 @@ import string
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from nltk.corpus import words
 from nltk.corpus import stopwords
-from sklearn.feature_extraction.text import TfidfVectorizer
 import random
 from collections import Counter
 import time
@@ -22,9 +21,16 @@ def gibberish_check(input_list, wordset):
     else:
         return 1
 
+    # no_words = ['no', 'na', 'none', 'nothing', 'nada', 'n', 'n/a'
+    #             'idk', 'dunno', 'ok', 'yes', 'y', 'ya', 'its ok', 'k']
+    # if input_list.lower() in no_words:
+    #     return 1
+    # else:
+    #     return 0
+
 
 def tokenize(input_list, stopset, bigram, trigram, stemmer):
-    remove_list = ['game']
+    remove_list = ['game', 'fuck', 'would']
     step_one = [z for z in input_list if z not in stopset]
     step_two = trigram[bigram[step_one]]
     step_three = [stemmer.stem(w) for w in step_two]
@@ -32,12 +38,12 @@ def tokenize(input_list, stopset, bigram, trigram, stemmer):
     return step_four
 
 
-def load_data(file_name):
+def load_data(file_name, gib_flag=0):
     verbatim_list = []
-    print("Loading from file: ", file_name)
     total_verbatim_count = 0
     removed_for_gibberish = []
-    sid = SentimentIntensityAnalyzer()
+    blank_lines = 0
+    # sid = SentimentIntensityAnalyzer()
     wordset = set(words.words())
     stopset = set(stopwords.words('english'))
     bigram = gensim.models.phrases.Phraser.load('bigram_verbatims.pkl')
@@ -47,19 +53,24 @@ def load_data(file_name):
         for line in f:
             total_verbatim_count += 1
             raw = line.split('\n')[0]
+            if raw == '':
+                blank_lines += 1
+                continue
             verbatim_list.append({'raw': raw})
             # verbatim_list[-1]['semantics'] = semantics(raw, sid)
             cleaned = clean_text(raw).split()
             verbatim_list[-1]['list'] = cleaned
-            if gibberish_check(cleaned, wordset):
+            if gib_flag and gibberish_check(raw, wordset):
                 removed_for_gibberish.append(raw)
                 del verbatim_list[-1]
                 continue
             verbatim_list[-1]['tokens'] = tokenize(cleaned, stopset, bigram, trigram, stemmer)
-    print("Total Verbatims in file: ", str(total_verbatim_count))
-    print("Removed by Gibberish Filter: ", str(len(removed_for_gibberish)))
 
-    return verbatim_list
+    print('blank lines: ', blank_lines)
+    print('removed for gibberish: ', len(removed_for_gibberish))
+    print('total verbatims: ', total_verbatim_count)
+
+    return verbatim_list, removed_for_gibberish
 
 
 def random_test(the_list, test_against, df):
@@ -67,7 +78,7 @@ def random_test(the_list, test_against, df):
     same_count = 0
     distance_total = 0
     for teststr in the_list:
-        distance = word2vec_model.wmdistance(test_against, teststr)
+        distance = word2vec.wmdistance(test_against, teststr)
         if distance < df:
             same_count += 1
             distance_total += df-distance
@@ -77,53 +88,86 @@ def random_test(the_list, test_against, df):
     return output_dict
 
 
-def get_max(the_list, ind):
-    stems = Counter()
-    for sub_list in the_list:
-        for w in sub_list:
-            stems[w] += 1
-    print(stems.most_common(20))
-    looking_for = stems.most_common(20)[ind][0]
-    for sub_list in the_list:
-        if looking_for in sub_list:
-            return sub_list
+def run_all(verbatim_file, output_file, num_topics=20, df=1.0, test_percent=100, remove_gibberish=0):
+    start = time.time()
+    outfile = open("data/" + output_file, 'w', encoding='utf-8')
+    input_verbatims, gibberish = load_data(verbatim_file, remove_gibberish)
+    v_tokens = [r['tokens'] for r in input_verbatims]
+
+    tokens_duplicate = random.sample(v_tokens, int(test_percent / 100 * len(v_tokens)))
+    print("length of list: ", len(tokens_duplicate))
+
+    start_message = "Verbatim File Used: %s\nNumber Topics Set: %d\nDistance Factor Set: %f\n" \
+                    "Number Verbatims Assessed: %d\nRemoved by Gibberish Filter: %d\n" % \
+                    (verbatim_file, num_topics, df, len(tokens_duplicate), len(gibberish))
+    outfile.write(start_message)
+    print(start_message)
+    outfile.write(str(gibberish) + '\n')
+
+    topic_final = []
+    for i in range(num_topics):
+        # test_against_list = random.sample(tokens_duplicate, sample_range)
+        test_against_list = tokens_duplicate
+        if len(test_against_list) < 10:
+            break
+        test_len = 0
+        for e, a in enumerate(test_against_list):
+            output_d = random_test(tokens_duplicate, a, df)
+            if output_d['distance metric'] > test_len:
+                test_len = output_d['distance metric']
+                saved_out = output_d
+        original_verbatim = input_verbatims[v_tokens.index(saved_out['test string'])]['raw']
+        outfile.write("#%d: (%d, %f) %s\n" % (i, saved_out['match count'], saved_out['distance metric'],
+                                              original_verbatim))
+        topic_final.append((saved_out['match count'], original_verbatim))
+        for e, t in enumerate(sorted(saved_out['match list'], key=lambda x: x[1])):
+            outfile.write('   - %d %s (%f)\n' % (e, input_verbatims[v_tokens.index(t[0])]['raw'], t[1]))
+            tokens_duplicate.remove(t[0])
+
+    for ind, v in enumerate(tokens_duplicate):
+        outfile.write("#%d: %s\n" % (ind, input_verbatims[v_tokens.index(v)]['raw']))
+
+    # print out topic summary
+    outfile.write("\n-----------------\n")
+    for i, topic_pairing in enumerate(topic_final):
+        outfile.write("#%d: (%d matches) %s\n" % (i+1, topic_pairing[0], topic_pairing[1]))
+
+    end = time.time()
+    outfile.write('TIME: %f\n' % ((end-start) / 60.0))
+    outfile.close()
 
 
-def get_list(the_list, num_returned=10):
-    tf_vectorizer = TfidfVectorizer(ngram_range=(2, 6), max_features=num_returned, stop_words='english')
-    tf_vectorizer.fit_transform(the_list)
+word2vec = gensim.models.KeyedVectors.load_word2vec_format('data/GoogleNews-vectors-negative300.bin.gz', binary=True)
+word2vec.init_sims(replace=True)  # normalizes vectors
 
-    return tf_vectorizer.build_analyzer()
+# run_all('dbz_list.txt', 'dbz_20_10.txt', 20, 1.0)
+# run_all('siuf_list.txt', 'siuf_20_10.txt', 20, 1.0, 1)
+# run_all('ginas_verbatims.txt', 'nps_20_10.txt', 20, 1.0, 1)
+# run_all('dbz_list.txt', 'dbz_20_09.txt', 20, 0.9)
+# run_all('dbz_list.txt', 'dbz_20_11.txt', 20, 1.1)
+# run_all('dbz_list.txt', 'dbz_20_08.txt', 20, 0.8)
+# run_all('dbz_list.txt', 'dbz_20_12.txt', 20, 1.2)
+# run_all('siuf_list.txt', 'siuf_20_11.txt', 20, 1.1, 1)
+# run_all('siuf_list.txt', 'siuf_20_09.txt', 20, 0.9, 1)
 
+# run_all('dbz_list.txt', 'dbz_5_10_(100).txt', 5, 1.0, 100)
+# run_all('dbz_list.txt', 'dbz_5_10_(80).txt', 5, 1.0, 80)
+# run_all('dbz_list.txt', 'dbz_5_10_(40).txt', 5, 1.0, 40)
+# run_all('dbz_list.txt', 'dbz_5_10_(20).txt', 5, 1.0, 20)
+# run_all('dbz_list.txt', 'dbz_5_10_(10).txt', 5, 1.0, 10)
+# run_all('dbz_list.txt', 'dbz_5_10_(5).txt', 5, 1.0, 5)
 
-start = time.time()
-verbatim_file = 'siuf_list.txt'
-data_samples_dicts = load_data(verbatim_file)
-data_samples = [r['tokens'] for r in data_samples_dicts]
-sample_range = int(len(data_samples) * 0.9)
-word2vec_model = gensim.models.KeyedVectors.load_word2vec_format('data/GoogleNews-vectors-negative300.bin.gz', binary=True)
-word2vec_model.init_sims(replace=True)  # normalizes vectors
+# run_all('NovInsiderCSAT.txt', 'csat_20_10.txt', 20, 1.0, 100, 1)
+# run_all('onexnps.txt', 'npsx_20_10.txt', 20, 1.0, 100, 1)
 
-distance_factor = 1.0
-copy_list = data_samples[:]
+# run_all('NovInsiderCSAT.txt', 'csat_30_10_notest.txt', 30, 1.0, 100, 1)
+# run_all('NovInsiderCSAT.txt', 'csat_30_11_notest.txt', 30, 1.1, 100, 1)
+# run_all('NovInsiderCSAT.txt', 'csat_30_12_notest.txt', 30, 1.2, 100, 1)
 
-for i in range(20):
-    # test_against_list = get_list(copy_list)
-    # test_against_list = random.sample(copy_list, sample_range)
-    test_against_list = copy_list
-    test_len = 0
-    for e, a in enumerate(test_against_list):
-        output_d = random_test(copy_list, a, distance_factor)
-        if output_d['distance metric'] > test_len:
-            test_len = output_d['distance metric']
-            saved_out = output_d
-    print("#%d: (%d, %f) %s" % (i, saved_out['match count'], saved_out['distance metric'], saved_out['test string']))
-    for e, t in enumerate(saved_out['match list']):
-        print('   - ', e, data_samples_dicts[data_samples.index(t[0])]['raw'], t[1])
-        copy_list.remove(t[0])
+run_all('data/jorge_verbatims_pos.txt', 'jorge_pos_30_10.txt', 30, 1.0, 100, 1)
+run_all('data/jorge_verbatims_neg.txt', 'jorge_neg_30_10.txt', 30, 1.0, 100, 1)
+run_all('data/jorge_verbatims_pos.txt', 'jorge_pos_30_12.txt', 30, 1.2, 100, 1)
+run_all('data/jorge_verbatims_neg.txt', 'jorge_neg_30_12.txt', 30, 1.2, 100, 1)
 
-end = time.time()
-print('TIME: ', end-start)
-for ind, v in enumerate(copy_list):
-    print("#%d: %s" % (ind, data_samples_dicts[data_samples.index(v)]['raw']))
-
+# run_all('data/xih_verbatims_raw.txt', 'insider_30_11_notest_all.txt', 20, 1.1, 100, 1)
+# run_all('data/xih_verbatims_raw.txt', 'insider_30_12_notest_all.txt', 20, 1.2, 100, 1)
