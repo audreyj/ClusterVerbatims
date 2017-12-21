@@ -1,3 +1,4 @@
+import sys
 import gensim
 import string
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
@@ -46,8 +47,8 @@ def load_data(file_name, gib_flag=0):
     # sid = SentimentIntensityAnalyzer()
     wordset = set(words.words())
     stopset = set(stopwords.words('english'))
-    bigram = gensim.models.phrases.Phraser.load('bigram_verbatims.pkl')
-    trigram = gensim.models.phrases.Phraser.load('trigram_verbatim.pkl')
+    bigram = gensim.models.phrases.Phraser.load('data/bigram_verbatims.pkl')
+    trigram = gensim.models.phrases.Phraser.load('data/trigram_verbatim.pkl')
     stemmer = gensim.parsing.porter.PorterStemmer()
     with open(file_name, encoding='utf-8') as f:
         for line in f:
@@ -137,37 +138,22 @@ def run_all(verbatim_file, output_file, num_topics=20, df=1.0, test_percent=100,
     outfile.close()
 
 
-word2vec = gensim.models.KeyedVectors.load_word2vec_format('data/GoogleNews-vectors-negative300.bin.gz', binary=True)
-word2vec.init_sims(replace=True)  # normalizes vectors
+if __name__ == "__main__":
+    word2vec = gensim.models.KeyedVectors.load_word2vec_format('data/GoogleNews-vectors-negative300.bin.gz', binary=True)
+    word2vec.init_sims(replace=True)  # normalizes vectors
 
-# run_all('dbz_list.txt', 'dbz_20_10.txt', 20, 1.0)
-# run_all('siuf_list.txt', 'siuf_20_10.txt', 20, 1.0, 1)
-# run_all('ginas_verbatims.txt', 'nps_20_10.txt', 20, 1.0, 1)
-# run_all('dbz_list.txt', 'dbz_20_09.txt', 20, 0.9)
-# run_all('dbz_list.txt', 'dbz_20_11.txt', 20, 1.1)
-# run_all('dbz_list.txt', 'dbz_20_08.txt', 20, 0.8)
-# run_all('dbz_list.txt', 'dbz_20_12.txt', 20, 1.2)
-# run_all('siuf_list.txt', 'siuf_20_11.txt', 20, 1.1, 1)
-# run_all('siuf_list.txt', 'siuf_20_09.txt', 20, 0.9, 1)
+    # run_all('data/XIH_reviews_pos.txt', 'insider_30_10_pos.txt', 20, 1.0, 100, 1)
+    # run_all('data/XIH_reviews_neg.txt', 'insider_30_10_neg.txt', 20, 1.0, 100, 1)
+    run_all('data/PUBG_data_list3.txt', 'pubg_20_11_all3.txt', 20, 1.1, 100, 1)
+    # run_all('data/KI_verbatims.txt', 'KI_30_11_(10).txt', 30, 1.1, 10, 1)
+    # run_all('data/KI_verbatims.txt', 'KI_30_11_(20).txt', 30, 1.1, 20, 1)
+    # run_all('data/KI_verbatims.txt', 'KI_30_11_(50).txt', 30, 1.1, 50, 1)
+    # run_all('data/KI_verbatims.txt', 'KI_30_11_(100).txt', 30, 1.1, 100, 1)
 
-# run_all('dbz_list.txt', 'dbz_5_10_(100).txt', 5, 1.0, 100)
-# run_all('dbz_list.txt', 'dbz_5_10_(80).txt', 5, 1.0, 80)
-# run_all('dbz_list.txt', 'dbz_5_10_(40).txt', 5, 1.0, 40)
-# run_all('dbz_list.txt', 'dbz_5_10_(20).txt', 5, 1.0, 20)
-# run_all('dbz_list.txt', 'dbz_5_10_(10).txt', 5, 1.0, 10)
-# run_all('dbz_list.txt', 'dbz_5_10_(5).txt', 5, 1.0, 5)
-
-# run_all('NovInsiderCSAT.txt', 'csat_20_10.txt', 20, 1.0, 100, 1)
-# run_all('onexnps.txt', 'npsx_20_10.txt', 20, 1.0, 100, 1)
-
-# run_all('NovInsiderCSAT.txt', 'csat_30_10_notest.txt', 30, 1.0, 100, 1)
-# run_all('NovInsiderCSAT.txt', 'csat_30_11_notest.txt', 30, 1.1, 100, 1)
-# run_all('NovInsiderCSAT.txt', 'csat_30_12_notest.txt', 30, 1.2, 100, 1)
-
-run_all('data/jorge_verbatims_pos.txt', 'jorge_pos_30_10.txt', 30, 1.0, 100, 1)
-run_all('data/jorge_verbatims_neg.txt', 'jorge_neg_30_10.txt', 30, 1.0, 100, 1)
-run_all('data/jorge_verbatims_pos.txt', 'jorge_pos_30_12.txt', 30, 1.2, 100, 1)
-run_all('data/jorge_verbatims_neg.txt', 'jorge_neg_30_12.txt', 30, 1.2, 100, 1)
-
-# run_all('data/xih_verbatims_raw.txt', 'insider_30_11_notest_all.txt', 20, 1.1, 100, 1)
-# run_all('data/xih_verbatims_raw.txt', 'insider_30_12_notest_all.txt', 20, 1.2, 100, 1)
+    # input_file = sys.argv[1]
+    # output_file = sys.argv[2]
+    # num_topics = sys.argv[3]
+    # distance_factor = sys.argv[4]
+    # test_percent = sys.argv[5]
+    #
+    # run_all(input_file, output_file, num_topics, distance_factor, test_percent, 1)
